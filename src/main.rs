@@ -2,6 +2,7 @@
 use std::net::TcpListener;
 use std::{
     io::{BufRead, BufReader, Write},
+    iter::Skip,
     ops::Index,
 };
 
@@ -19,8 +20,8 @@ fn main() {
                     .collect();
                 let request_line = http_request[0].split_whitespace().skip(1).next();
                 let mut content = String::new();
-                let message = match request_line {
-                    Some("/") | None => "200 OK",
+                let message: String = match request_line {
+                    Some("/") | None => String::from("200 OK"),
                     Some(path) => {
                         if path.starts_with("/echo/") {
                             let start = path.find("/echo/");
@@ -28,14 +29,27 @@ fn main() {
                                 Some(x) => content = path[x + 6..].to_string(),
                                 None => content = String::new(),
                             }
-                            "200 OK"
+                            String::from("200 OK")
+                        } else if path.starts_with("/user-agent") {
+                            let mut agent = String::new();
+                            for ele in http_request.iter() {
+                                if ele.starts_with("User-Agent") {
+                                    agent = ele.split(":").nth(1).unwrap_or("").trim().to_string();
+                                    break;
+                                } else {
+                                    continue;
+                                }
+                            }
+                            content = agent;
+                            String::from("200 OK")
                         } else {
-                            "404 Not Found"
+                            String::from("404 Not Found")
                         }
                     }
                 };
 
-                // println!("{:?}", http_request);
+                println!("{:?}", http_request);
+                println!("{content}");
                 let response = format!(
                     "HTTP/1.1 {message}\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}",
                     content.len(),
