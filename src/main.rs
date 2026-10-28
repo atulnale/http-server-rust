@@ -4,13 +4,14 @@ use std::{
     io::{BufRead, BufReader, Write},
     iter::Skip,
     ops::Index,
+    thread,
 };
 
 fn main() {
     let listener = TcpListener::bind("127.0.0.1:4221").unwrap();
 
     for stream in listener.incoming() {
-        match stream {
+        let handle = thread::spawn(move || match stream {
             Ok(mut stream) => {
                 let buf_reader = BufReader::new(&stream);
                 let http_request: Vec<_> = buf_reader
@@ -60,6 +61,6 @@ fn main() {
             Err(e) => {
                 println!("error: {}", e);
             }
-        }
+        });
     }
 }
